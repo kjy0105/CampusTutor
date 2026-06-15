@@ -26,8 +26,8 @@
 - **동적 그룹화 로직 수정**: `updateDashboard()` 및 `updateTutoringList()` 내의 `groupedAccepted` 연산에서 학생 이름을 기준으로 병렬 과목을 묶을 때 이름의 공백 오류를 막기 위해 trim된 문자열을 키로 사용하도록 수정.
 
 ## Core Files We Can Explain
-- [index.html](file:///c:/Users/kjyba/Desktop/학교/2-1/인공지능기초 - 윤승현/test_website/test_website/index.html): 전체 매칭 플랫폼의 UI 뼈대, 회원가입 폼(선생님/학생 세분화), 실시간 알림 드로어 및 1:1 실시간 채팅 레이아웃 구조 정의.
-- [script.js](file:///c:/Users/kjyba/Desktop/학교/2-1/인공지능기초 - 윤승현/test_website/test_website/script.js): Firebase Realtime Database의 실시간 이벤트 리스너 연동, 비즈니스 로직(중복 체크, 역제안 수락 및 스키마 클리업, 포인트 보너스 적립, 알림 내비게이션) 제어.
+- [index.html]: 전체 매칭 플랫폼의 UI 뼈대, 회원가입 폼(선생님/학생 세분화), 실시간 알림 드로어 및 1:1 실시간 채팅 레이아웃 구조 정의.
+- [script.js]: Firebase Realtime Database의 실시간 이벤트 리스너 연동, 비즈니스 로직(중복 체크, 역제안 수락 및 스키마 클리업, 포인트 보너스 적립, 알림 내비게이션) 제어.
 
 ## What We Learned
 - **데이터 무결성 및 정제(Sanitization)의 필수성**: 사용자 이름 데이터 뒤의 작은 공백(`"박건우 "` vs `"박건우"`) 하나가 데이터베이스 키 매칭 실패 및 대화방 해시 불일치를 야기하여 서비스 단절을 가져올 수 있음을 깨닫고, 폼 입력 시점과 비교 시점에 철저하게 공백 제거(`.trim()`)를 적용해야 한다는 소중한 교훈을 얻었습니다.
