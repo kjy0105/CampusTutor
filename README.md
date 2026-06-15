@@ -1,5 +1,5 @@
 # CampusTutor
-https://testwebsite-theta-seven.vercel.app/#
+https://testwebsite-theta-seven.vercel.app
 
 대학생 튜터와 초·중·고 학생을 지역, 과목, 가능 시간대를 기준으로 연결하는 과외 매칭 웹 서비스입니다. 2026년 봄학기 인공지능 기초 프로그래밍 기말 프로젝트(Team 8)로 개발되었습니다.
 
