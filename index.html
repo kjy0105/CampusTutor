@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusTutor - 맞춤형 과외 매칭 앱</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <div class="logo" onclick="showSection('home')" style="cursor:pointer">CampusTutor</div>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="#" onclick="showSection('home')">홈</a></li>
+                <li id="nav-login"><a href="#" onclick="openAuthModal()">로그인/회원가입</a></li>
+                <li id="nav-dashboard" style="display:none"><a href="#" onclick="showSection('dashboard')">대시보드</a></li>
+                <li id="nav-mypage" style="display:none"><a href="#" onclick="showSection('mypage')">마이페이지</a></li>
+                <li id="nav-admin" style="display:none"><a href="#" onclick="showSection('admin')">관리자 콘솔</a></li>
+                <li id="nav-notifications" style="display:none; position: relative;">
+                    <a href="#" onclick="toggleNotificationPanel(event)" style="display:flex; align-items:center; gap:4px; padding: 0 10px;">
+                        <i class="fas fa-bell" style="font-size:1.2rem;"></i>
+                        <span id="notification-badge" style="display:none; position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 0.65rem; font-weight: 700; align-items: center; justify-content: center; border: 2px solid var(--white);">0</span>
+                    </a>
+                </li>
+                <li id="nav-logout" style="display:none !important"></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <div id="section-home" class="page-section">
+        <header>
+            <div class="hero-content">
+                <div class="badge" id="hero-badge">검증된 대학생 튜터 매칭</div>
+                <h1 id="hero-title">나에게 딱 맞는<br>대학생 과외를 만나보세요</h1>
+                <p id="hero-desc">대학생 선생님들께 배우는 초중고 과외 서비스.</p>
+                <div class="hero-btns" id="home-btns">
+                    <!-- Buttons are dynamically populated via script.js -->
+                </div>
+            </div>
+        </header>
+        <!-- Notices Banner (Only shown when there are active notices) -->
+        <div id="notice-banner-container" class="section" style="padding-bottom: 0; display: none;">
+            <!-- Render notices dynamically -->
+        </div>
+
+        <!-- Dynamic Home Content Section -->
+        <div id="home-dynamic-content" class="section" style="display: none;">
+            <!-- Rendered dynamically in script.js based on role -->
+        </div>
+    </div>
+
+    <!-- Tutor Dashboard Section -->
+    <div id="section-dashboard" class="page-section" style="display:none">
+        <section class="section">
+            <div class="dashboard-header">
+                <h2 id="tutor-welcome">님, 환영합니다!</h2>
+            </div>
+            <div id="match-list"></div>
+        </section>
+    </div>
+
+    <!-- Auth Modal (Login/Signup) -->
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAuthModal()">&times;</span>
+            
+            <div id="login-form-container">
+                <h2>로그인</h2>
+                <form onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label>이메일</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="input-group">
+                        <label>비밀번호</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="submit-btn">로그인</button>
+                </form>
+                <div style="text-align:center; margin-top:15px;">
+                    <p>계정이 없으신가요?</p>
+                    <button class="btn secondary" onclick="toggleAuth('signup-tutor')">선생님 회원가입</button>
+                    <button class="btn secondary" onclick="toggleAuth('signup-tutee')">학생 회원가입</button>
+                </div>
+            </div>
+
+            <!-- Teacher Signup -->
+            <div id="signup-tutor-container" style="display:none;">
+                <button class="btn-back" onclick="toggleAuth('login')" style="margin-bottom:1rem; background:none; border:none; color:var(--primary); cursor:pointer; font-weight:700;"><i class="fas fa-arrow-left"></i> 뒤로가기</button>
+                <h2>선생님 회원가입</h2>
+                <form onsubmit="handleSignup('tutor', event)">
+                    <div class="input-group"><label>이메일</label><input type="email" id="tutor-email" required></div>
+                    <div class="input-group"><label>비밀번호</label><input type="password" id="tutor-password" required></div>
+                    <div class="input-group"><label>비밀번호 확인</label><input type="password" id="tutor-password-confirm" required></div>
+                    <div class="input-group"><label>이름</label><input type="text" id="tutor-name" required></div>
+                    <div class="input-group">
+                        <label>대학교 및 전공</label>
+                        <input type="text" id="tutor-univ" placeholder="예: OO대학교 OO학과">
+                    </div>
+                    <div class="input-group">
+                        <label>희망 시급 (원)</label>
+                        <input type="number" id="tutor-fee" step="500" placeholder="예: 20000">
+                    </div>
+                    <div class="input-group">
+                        <label>스펙/경력</label>
+                        <input type="text" id="tutor-spec" placeholder="예: 과외 경력 2년">
+                    </div>
+                    <div class="input-group">
+                        <label>거주 지역</label>
+                        <select id="tutor-region" onchange="updateSubRegions('tutor')" required>
+                            <option value="">시/도를 선택하세요</option>
+                        </select>
+                        <select id="tutor-sub-region" required>
+                            <option value="">구/군을 선택하세요</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>주력 과목 (최대 3개 선택)</label>
+                        <div id="tutor-subjects" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9rem;">
+                            <label><input type="checkbox" name="subject" value="국어"> 국어</label>
+                            <label><input type="checkbox" name="subject" value="영어"> 영어</label>
+                            <label><input type="checkbox" name="subject" value="수학"> 수학</label>
+                            <label><input type="checkbox" name="subject" value="물리학"> 물리학</label>
+                            <label><input type="checkbox" name="subject" value="화학"> 화학</label>
+                            <label><input type="checkbox" name="subject" value="생명과학"> 생명과학</label>
+                            <label><input type="checkbox" name="subject" value="지구과학"> 지구과학</label>
+                            <label><input type="checkbox" name="subject" value="세계지리"> 세계지리</label>
+                            <label><input type="checkbox" name="subject" value="한국지리"> 한국지리</label>
+                            <label><input type="checkbox" name="subject" value="경제학"> 경제학</label>
+                            <label><input type="checkbox" name="subject" value="법과 정치"> 법과 정치</label>
+                            <label><input type="checkbox" name="subject" value="윤리와 사상"> 윤리와 사상</label>
+                            <label><input type="checkbox" name="subject" value="생활과 윤리"> 생활과 윤리</label>
+                            <label><input type="checkbox" name="subject" value="파이썬"> 파이썬</label>
+                            <label><input type="checkbox" name="subject" value="미술"> 미술</label>
+                            <label><input type="checkbox" name="subject" value="음악"> 음악</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">가입하기</button>
+                </form>
+            </div>
+
+            <!-- Student Signup -->
+            <div id="signup-tutee-container" style="display:none;">
+                <button class="btn-back" onclick="toggleAuth('login')" style="margin-bottom:1rem; background:none; border:none; color:var(--primary); cursor:pointer; font-weight:700;"><i class="fas fa-arrow-left"></i> 뒤로가기</button>
+                <h2>학생 회원가입</h2>
+                <form onsubmit="handleSignup('tutee', event)">
+                    <div class="input-group"><label>이메일</label><input type="email" id="tutee-email" required></div>
+                    <div class="input-group"><label>비밀번호</label><input type="password" id="tutee-password" required></div>
+                    <div class="input-group"><label>비밀번호 확인</label><input type="password" id="tutee-password-confirm" required></div>
+                    <div class="input-group"><label>이름</label><input type="text" id="tutee-name" required></div>
+                    <div class="input-group"><label>나이</label><input type="number" id="tutee-age" required></div>
+                    <div class="input-group">
+                        <label>지역</label>
+                        <select id="tutee-region" onchange="updateSubRegions('tutee')" required>
+                            <option value="">시/도를 선택하세요</option>
+                        </select>
+                        <select id="tutee-sub-region" required>
+                            <option value="">구/군을 선택하세요</option>
+                        </select>
+                    </div>
+                    <div class="input-group"><label>학교 (중/고)</label><input type="text" id="tutee-school" required></div>
+                    <button type="submit" class="submit-btn">가입하기</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('reviewModal')">&times;</span>
+            <h2>선생님 후기 남기기</h2>
+            <div id="review-tutor-info" style="margin-bottom:1.5rem; padding:1rem; background:#f1f5f9; border-radius:12px;"></div>
+            <div class="input-group">
+                <label>별점</label>
+                <select id="review-rating">
+                    <option value="5">⭐⭐⭐⭐⭐ (5점)</option>
+                    <option value="4">⭐⭐⭐⭐ (4점)</option>
+                    <option value="3">⭐⭐⭐ (3점)</option>
+                    <option value="2">⭐⭐ (2점)</option>
+                    <option value="1">⭐ (1점)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>내용</label>
+                <textarea id="review-text" rows="4" style="width:100%; padding:0.8rem; border:1px solid #e2e8f0; border-radius:10px;" placeholder="선생님과의 수업은 어떠셨나요?"></textarea>
+            </div>
+            <button class="submit-btn" onclick="submitReview()">후기 등록하기</button>
+        </div>
+    </div>
+
+    <!-- Edit Review Modal -->
+    <div id="editReviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editReviewModal')">&times;</span>
+            <h2>선생님 후기 수정하기</h2>
+            <div id="edit-review-tutor-info" style="margin-bottom:1.5rem; padding:1rem; background:#f1f5f9; border-radius:12px; font-weight: 700;"></div>
+            <div class="input-group">
+                <label>별점</label>
+                <select id="edit-review-rating">
+                    <option value="5">⭐⭐⭐⭐⭐ (5점)</option>
+                    <option value="4">⭐⭐⭐⭐ (4점)</option>
+                    <option value="3">⭐⭐⭐ (3점)</option>
+                    <option value="2">⭐⭐ (2점)</option>
+                    <option value="1">⭐ (1점)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>내용</label>
+                <textarea id="edit-review-text" rows="4" style="width:100%; padding:0.8rem; border:1px solid #e2e8f0; border-radius:10px; box-sizing: border-box;" placeholder="선생님과의 수업은 어떠셨나요?"></textarea>
+            </div>
+            <button class="submit-btn" onclick="submitEditReview()">후기 수정완료</button>
+        </div>
+    </div>
+
+    <!-- View Reviews Modal -->
+    <div id="viewReviewsModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="closeModal('viewReviewsModal')">&times;</span>
+            <h2 id="view-reviews-title">선생님 후기</h2>
+            <div id="view-reviews-summary" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;">
+                <!-- Filled dynamically with average star rating & count -->
+            </div>
+            <div id="view-reviews-list" class="review-list" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; box-sizing: border-box;">
+                <!-- Filled dynamically with individual review cards -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Suggestion Modal -->
+    <div id="suggestionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('suggestionModal')">&times;</span>
+            <h2>사이트 건의사항</h2>
+            <div class="input-group">
+                <textarea id="suggestion-text" rows="4" style="width:100%; padding:0.8rem; border:1px solid #e2e8f0; border-radius:10px;" placeholder="소중한 의견을 남겨주세요"></textarea>
+            </div>
+            <button class="submit-btn" onclick="submitSuggestion()">제출하기</button>
+        </div>
+    </div>
+
+    <!-- Apply Modal -->
+    <div id="applyModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <span class="close" onclick="closeApplyModal()">&times;</span>
+            <h2 id="applyTitle">과외 신청하기</h2>
+            <form onsubmit="handleNewApply(event)">
+                <!-- User information is automatically retrieved from the logged-in profile -->
+                <div style="background: #f1f5f9; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; font-size: 0.95rem; border: 1px solid #e2e8f0; text-align: left;">
+                    <p style="margin: 0 0 0.5rem 0; color: #475569;"><strong>신청자 정보:</strong> <span id="apply-user-info-display" style="font-weight: 700; color: var(--text-main);"></span></p>
+                    <small style="color: #64748b; font-weight: 500;">* 프로필 정보(이름, 이메일, 거주지역)로 신청서가 접수됩니다.</small>
+                </div>
+                
+                <div class="input-group">
+                    <label style="font-weight: 700; display: block; margin-bottom: 0.5rem;">희망 과목 (중복 선택 가능)</label>
+                    <div id="apply-subjects" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9rem; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <label><input type="checkbox" name="apply-subject" value="국어"> 국어</label>
+                        <label><input type="checkbox" name="apply-subject" value="영어"> 영어</label>
+                        <label><input type="checkbox" name="apply-subject" value="수학"> 수학</label>
+                        <label><input type="checkbox" name="apply-subject" value="물리학"> 물리학</label>
+                        <label><input type="checkbox" name="apply-subject" value="화학"> 화학</label>
+                        <label><input type="checkbox" name="apply-subject" value="생명과학"> 생명과학</label>
+                        <label><input type="checkbox" name="apply-subject" value="지구과학"> 지구과학</label>
+                        <label><input type="checkbox" name="apply-subject" value="세계지리"> 세계지리</label>
+                        <label><input type="checkbox" name="apply-subject" value="한국지리"> 한국지리</label>
+                        <label><input type="checkbox" name="apply-subject" value="경제학"> 경제학</label>
+                        <label><input type="checkbox" name="apply-subject" value="법과 정치"> 법과 정치</label>
+                        <label><input type="checkbox" name="apply-subject" value="윤리와 사상"> 윤리와 사상</label>
+                        <label><input type="checkbox" name="apply-subject" value="생활과 윤리"> 생활과 윤리</label>
+                        <label><input type="checkbox" name="apply-subject" value="파이썬"> 파이썬</label>
+                        <label><input type="checkbox" name="apply-subject" value="미술"> 미술</label>
+                        <label><input type="checkbox" name="apply-subject" value="음악"> 음악</label>
+                    </div>
+                </div>
+                
+                <div class="input-group" style="margin-top: 1.2rem;">
+                    <label style="font-weight: 700; display: block; margin-bottom: 0.5rem;">추가 요청사항</label>
+                    <textarea id="apply-request" rows="3" style="width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; resize: vertical; box-sizing: border-box;" placeholder="선생님께 전달할 특별한 희망 사항(시간대, 특별 요구 등)이 있다면 입력해 주세요."></textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn" style="margin-top: 1.5rem;">신청서 제출</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MyPage Section -->
+    <div id="section-mypage" class="page-section" style="display:none">
+        <section class="section">
+            <div class="mypage-layout">
+                <aside class="mypage-sidebar">
+                    <div class="profile-card">
+                        <div class="profile-avatar"><i class="fas fa-user-circle"></i></div>
+                        <h3 id="sidebar-name">사용자명</h3>
+                        <p id="sidebar-role" class="role-badge">학생</p>
+                    </div>
+                    <nav class="mypage-menu">
+                        <button class="menu-item active" onclick="switchMyPageTab('profile')"><i class="fas fa-id-card"></i> 프로필 수정</button>
+                        <button class="menu-item" onclick="switchMyPageTab('tutoring')"><i class="fas fa-chalkboard-teacher"></i> 수업 관리</button>
+                        <button class="menu-item" onclick="switchMyPageTab('reviews')"><i class="fas fa-star"></i> 나의 후기</button>
+                        <button class="menu-item" onclick="switchMyPageTab('suggestion')"><i class="fas fa-comment-dots"></i> 건의사항</button>
+                        <button class="menu-item" style="color: #ef4444;" onclick="switchMyPageTab('withdraw')"><i class="fas fa-user-slash"></i> 회원 탈퇴</button>
+                    </nav>
+                </aside>
+
+                <main class="mypage-content">
+                    <div id="tab-profile" class="tab-panel">
+                        <h2>내 프로필</h2>
+                        <div class="card profile-info-card" id="profile-info-display">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                        <button class="submit-btn" onclick="openEditProfileModal()" style="margin-top: 1.5rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fas fa-edit"></i>프로필 수정하기
+                        </button>
+                        <div id="tutor-cert-box" style="display: none; margin-top: 1.5rem; padding: 1.25rem; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; text-align: left; box-sizing: border-box;">
+                            <h3 style="margin-top: 0; margin-bottom: 0.75rem; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; color: var(--text-main);"><i class="fas fa-graduation-cap" style="color: var(--secondary);"></i>재학/졸업 인증 신청</h3>
+                            <div id="tutor-cert-status-text" style="font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem;">현재 상태: <span class="tag" style="background:#f1f5f9; color:#475569;">미제출</span></div>
+                            
+                            <div id="tutor-cert-form" style="display: block;">
+                                <label style="display: block; font-weight: 600; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">증명서 파일 첨부 (이미지 파일)</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                    <input type="file" id="tutor-cert-file-input" accept="image/*" style="display: none;" onchange="handleTutorCertFileChange()">
+                                    <button type="button" class="btn secondary" onclick="document.getElementById('tutor-cert-file-input').click()" style="margin: 0; display: flex; align-items: center; gap: 6px; padding: 0.5rem 1rem; font-size: 0.85rem; background: #ffffff; border: 1px solid #cbd5e1; color: var(--text-main); font-weight: 600; cursor: pointer;">
+                                        <i class="fas fa-file-image"></i>파일 선택
+                                    </button>
+                                    <span id="tutor-cert-filename" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">선택된 파일 없음</span>
+                                </div>
+                                <div id="tutor-cert-preview-container" style="display: none; margin-top: 1rem; text-align: center; position: relative;">
+                                    <img id="tutor-cert-preview-img" src="" alt="Certification Preview" style="max-width: 100%; max-height: 180px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: var(--shadow-sm);">
+                                    <button type="button" onclick="clearTutorCertFile()" style="position: absolute; top: -8px; right: 0; background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center;">&times;</button>
+                                </div>
+                                <button type="button" class="btn primary" onclick="uploadTutorCertification()" style="width: 100%; margin-top: 1.25rem; margin-bottom: 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; background: var(--secondary); cursor: pointer; border: none;">
+                                    <i class="fas fa-cloud-upload-alt"></i>인증 신청서 제출
+                                </button>
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-top: 1.5rem;">
+                            <span onclick="handleLogout()" style="cursor: pointer; color: #4b5563; font-weight: 500; font-size: 0.95rem; text-decoration: underline; transition: all 0.2s;" onmouseover="this.style.color='#1f2937'" onmouseout="this.style.color='#4b5563'">로그아웃하기</span>
+                        </div>
+                    </div>
+
+                    <div id="tab-tutoring" class="tab-panel" style="display:none">
+                        <h2>수업 관리</h2>
+                        <div id="my-tutoring-list" class="match-grid"></div>
+                    </div>
+
+                    <div id="tab-reviews" class="tab-panel" style="display:none">
+                        <h2>나의 후기</h2>
+                        <div id="my-reviews-list" class="review-list"></div>
+                    </div>
+
+
+                    <div id="tab-suggestion" class="tab-panel" style="display:none">
+                        <h2>건의사항 및 고객센터</h2>
+                        
+                        <div class="card" style="padding: 1.5rem; background: var(--white); border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 2rem;">
+                            <!-- Form container -->
+                            <div id="suggestion-form-wrapper">
+                                <h3 style="margin-top:0; margin-bottom:1rem;"><i class="fas fa-paper-plane" style="color:var(--primary); margin-right:8px;"></i>새 건의사항 보내기</h3>
+                                <form onsubmit="handleSuggestionSubmit(event)">
+                                    <div class="input-group">
+                                        <label style="font-weight:600; margin-bottom:0.5rem; display:block;">건의 내용</label>
+                                        <textarea id="suggestion-input-text" rows="4" style="width:100%; padding:0.8rem; border:1px solid #e2e8f0; border-radius:10px; box-sizing:border-box;" placeholder="서비스 이용 중 겪으신 불편이나 희망하시는 기능을 상세히 기재해 주세요." required></textarea>
+                                    </div>
+                                    
+                                    <div class="input-group" style="margin-top: 1rem; margin-bottom: 1.5rem;">
+                                        <label style="font-weight:600; margin-bottom:0.5rem; display:block;"><i class="fas fa-image" style="margin-right:6px;"></i>사진 첨부 (선택)</label>
+                                        <div class="file-upload-wrapper">
+                                            <input type="file" id="suggestion-file-input" accept="image/*" style="display:none;" onchange="handleSuggestionFileChange()">
+                                            <button type="button" class="btn secondary" onclick="document.getElementById('suggestion-file-input').click()" style="margin:0; width:100%; border:2px dashed #cbd5e1; background:#f8fafc; padding: 1rem; border-radius: 10px;">
+                                                <i class="fas fa-cloud-upload-alt" style="margin-right:8px; font-size:1.2rem;"></i>사진 찾아보기 또는 드래그
+                                            </button>
+                                            <div id="suggestion-file-preview" style="margin-top:1rem; display:none; position:relative; text-align:center;">
+                                                <img id="suggestion-preview-img" src="" alt="Preview" style="max-height: 180px; border-radius: 10px; border: 1px solid #cbd5e1; box-shadow: var(--shadow);">
+                                                <button type="button" onclick="clearSuggestionFile()" style="position:absolute; top: -8px; right: 0; background:#ef4444; color:white; border:none; border-radius:50%; width:24px; height:24px; cursor:pointer; font-weight:700;">&times;</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="submit-btn" style="max-width: 200px; margin-top: 0.5rem;">제출하기</button>
+                                </form>
+                            </div>
+                            
+                            <!-- Success message container (initially hidden) -->
+                            <div id="suggestion-success-wrapper" style="display:none; text-align:center; padding: 2rem 1rem;">
+                                <i class="fas fa-check-circle" style="font-size: 4rem; color: var(--secondary); margin-bottom: 1.5rem;"></i>
+                                <h3 style="font-size: 1.5rem; margin:0 0 0.5rem 0;">건의사항 제출 완료!</h3>
+                                <p style="color: var(--text-muted); margin-bottom: 2rem; line-height: 1.6;">
+                                    보내주신 소중한 의견이 운영진에게 접수되었습니다.<br>
+                                    최대한 빠른 시일 내로 성실하게 검토 후 답변해 드리겠습니다.
+                                </p>
+                                <button class="btn primary" onclick="resetSuggestionForm()" style="max-width: 200px; margin: 0 auto;">새 건의사항 작성</button>
+                            </div>
+                        </div>
+
+                        <!-- My Suggestion Tickets list -->
+                        <div class="my-suggestions-container">
+                            <h3 style="margin-bottom:1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;"><i class="fas fa-list-alt" style="color:var(--primary); margin-right:8px;"></i>나의 건의사항 내역</h3>
+                            <div id="my-suggestions-list" class="suggestion-list-wrapper">
+                                <!-- Populated dynamically via JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="tab-withdraw" class="tab-panel" style="display:none">
+                        <h2>회원 탈퇴</h2>
+                        <div class="card" style="border: 1px solid #fecdd3; background: #fff1f2; padding: 2rem; border-radius: 16px;">
+                            <h3 style="color: #be123c; margin-top: 0; display: flex; align-items: center; gap: 8px;"><i class="fas fa-exclamation-triangle"></i>회원 탈퇴 안내</h3>
+                            <p style="color: #9f1239; line-height: 1.6; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                                회원 탈퇴를 진행하시면 <strong>CampusTutor</strong> 서비스에 등록된 모든 정보가 영구적으로 삭제됩니다.<br>
+                                탈퇴 후에는 계정 정보, 과외 매칭 및 신청 내역, 적립된 포인트, 작성한 후기 등의 데이터는 <strong>결코 복구할 수 없습니다.</strong>
+                            </p>
+                            
+                            <form onsubmit="executeWithdraw(event)">
+                                <div class="input-group" style="margin-bottom: 1.5rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-weight: 600; color: #9f1239; margin-bottom: 0;">
+                                        <input type="checkbox" id="withdraw-confirm-checkbox" required style="width: 16px; height: 16px; margin: 0; padding: 0;">
+                                        위 안내 사항을 명확히 확인하였으며, 이에 동의합니다. (필수)
+                                    </label>
+                                </div>
+                                
+                                <div class="input-group" style="margin-bottom: 1.5rem;">
+                                    <label style="font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem; display: block;">현재 비밀번호 입력</label>
+                                    <input type="password" id="withdraw-password-input" required placeholder="본인 확인을 위해 현재 비밀번호를 입력해주세요">
+                                </div>
+                                
+                                <button type="submit" class="submit-btn" style="background: #ef4444; margin-top: 0.5rem;">
+                                    영구 회원 탈퇴 진행
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </section>
+    </div>
+
+    <!-- Admin Console Section -->
+    <div id="section-admin" class="page-section" style="display:none">
+        <section class="section">
+            <div class="mypage-layout">
+                <aside class="mypage-sidebar">
+                    <div class="profile-card">
+                        <div class="profile-avatar" style="color: #6366f1;"><i class="fas fa-user-shield"></i></div>
+                        <h3 id="admin-name">최관리자</h3>
+                        <p class="role-badge" style="background: #e0e7ff; color: #6366f1;">운영진</p>
+                    </div>
+                    <nav class="mypage-menu animate-menu">
+                        <button class="menu-item active" id="admin-menu-stats" onclick="switchAdminTab('stats')"><i class="fas fa-chart-line"></i> 대시보드 통계</button>
+                        <button class="menu-item" id="admin-menu-notices" onclick="switchAdminTab('notices')"><i class="fas fa-bullhorn"></i> 공지사항 관리</button>
+                        <button class="menu-item" id="admin-menu-users" onclick="switchAdminTab('users')"><i class="fas fa-users-cog"></i> 회원 관리</button>
+                        <button class="menu-item" id="admin-menu-suggestions" onclick="switchAdminTab('suggestions')"><i class="fas fa-comment-medical"></i> 건의사항 답변</button>
+                        <button class="menu-item" id="admin-menu-matches" onclick="switchAdminTab('matches')"><i class="fas fa-handshake"></i> 수업 매칭 관리</button>
+                        <button class="menu-item" id="admin-menu-reviews" onclick="switchAdminTab('reviews')"><i class="fas fa-star-half-alt"></i> 후기 관리</button>
+                        <button class="menu-item" id="admin-menu-certs" onclick="switchAdminTab('certs')"><i class="fas fa-graduation-cap"></i> 재학인증 승인 관리</button>
+                        <button class="menu-item" style="color: #4b5563; margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> 로그아웃하기</button>
+                    </nav>
+                </aside>
+
+                <main class="mypage-content" style="overflow-x: auto;">
+                    <!-- Stat Tab -->
+                    <div id="admin-tab-stats" class="tab-panel">
+                        <h2>시스템 통계 대시보드</h2>
+                        <div id="admin-stats-grid" class="stat-card-grid">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Notice Tab -->
+                    <div id="admin-tab-notices" class="tab-panel" style="display:none">
+                        <h2>공지사항 관리</h2>
+                        <div class="card" style="padding: 1.5rem; background: var(--white); border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 2rem;">
+                            <h3 style="margin-top:0; margin-bottom:1rem;"><i class="fas fa-edit" style="color:var(--primary); margin-right:8px;"></i>새 공지사항 올리기</h3>
+                            <form onsubmit="handlePostNotice(event)">
+                                <div class="input-group">
+                                    <label>공지사항 제목</label>
+                                    <input type="text" id="notice-title" required placeholder="예: [안내] 실시간 알림 및 대시보드 과목 필터 고도화 안내">
+                                </div>
+                                <div class="input-group">
+                                    <label>공지사항 내용</label>
+                                    <textarea id="notice-content" rows="4" required placeholder="공지 내용을 자세히 기재해 주세요." style="width:100%; box-sizing:border-box;"></textarea>
+                                </div>
+                                <button type="submit" class="submit-btn" style="max-width: 180px; margin-top: 0.5rem;">공지사항 등록</button>
+                            </form>
+                        </div>
+                        
+                        <h3 style="margin-bottom:1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem;"><i class="fas fa-list" style="color:var(--primary); margin-right:8px;"></i>등록된 공지사항 목록</h3>
+                        <div id="admin-notices-list-container">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Users Tab -->
+                    <div id="admin-tab-users" class="tab-panel" style="display:none">
+                        <h2>회원 관리 및 정지 제어</h2>
+                        <div id="admin-users-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Suggestions Tab -->
+                    <div id="admin-tab-suggestions" class="tab-panel" style="display:none">
+                        <h2>건의사항 문의 답변 처리</h2>
+                        <div id="admin-suggestions-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Matches Tab -->
+                    <div id="admin-tab-matches" class="tab-panel" style="display:none">
+                        <h2>과외 수업 매칭 관리</h2>
+                        <div id="admin-matches-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Reviews Tab -->
+                    <div id="admin-tab-reviews" class="tab-panel" style="display:none">
+                        <h2>선생님 후기 블라인드 관리</h2>
+                        <div id="admin-reviews-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Certifications Tab -->
+                    <div id="admin-tab-certs" class="tab-panel" style="display:none">
+                        <h2>재학/졸업 인증 승인 관리</h2>
+                        <div id="admin-certs-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </section>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="closeModal('editProfileModal')">&times;</span>
+            <h2>프로필 수정</h2>
+            
+            <form onsubmit="handleProfileUpdate(event)">
+                <!-- Shared inputs -->
+                <div class="input-group">
+                    <label>이름</label>
+                    <input type="text" id="edit-profile-name" required>
+                </div>
+
+                <!-- Tutor-specific inputs (toggled in JS) -->
+                <div id="tutor-edit-fields" style="display:none;">
+                    <div class="input-group">
+                        <label>대학교 및 전공</label>
+                        <input type="text" id="edit-tutor-univ">
+                    </div>
+                    <div class="input-group">
+                        <label>희망 시급 (원)</label>
+                        <input type="number" id="edit-tutor-fee" step="500">
+                    </div>
+                    <div class="input-group">
+                        <label>스펙/경력</label>
+                        <input type="text" id="edit-tutor-spec">
+                    </div>
+                    <div class="input-group">
+                        <label>거주 지역</label>
+                        <select id="edit-tutor-region" onchange="updateSubRegions('edit-tutor')">
+                            <option value="">시/도를 선택하세요</option>
+                        </select>
+                        <select id="edit-tutor-sub-region">
+                            <option value="">구/군을 선택하세요</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>주력 과목 (최대 3개 선택)</label>
+                        <div id="edit-tutor-subjects" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9rem;">
+                            <label><input type="checkbox" name="edit-subject" value="국어"> 국어</label>
+                            <label><input type="checkbox" name="edit-subject" value="영어"> 영어</label>
+                            <label><input type="checkbox" name="edit-subject" value="수학"> 수학</label>
+                            <label><input type="checkbox" name="edit-subject" value="물리학"> 물리학</label>
+                            <label><input type="checkbox" name="edit-subject" value="화학"> 화학</label>
+                            <label><input type="checkbox" name="edit-subject" value="생명과학"> 생명과학</label>
+                            <label><input type="checkbox" name="edit-subject" value="지구과학"> 지구과학</label>
+                            <label><input type="checkbox" name="edit-subject" value="세계지리"> 세계지리</label>
+                            <label><input type="checkbox" name="edit-subject" value="한국지리"> 한국지리</label>
+                            <label><input type="checkbox" name="edit-subject" value="경제학"> 경제학</label>
+                            <label><input type="checkbox" name="edit-subject" value="법과 정치"> 법과 정치</label>
+                            <label><input type="checkbox" name="edit-subject" value="윤리와 사상"> 윤리와 사상</label>
+                            <label><input type="checkbox" name="edit-subject" value="생활과 윤리"> 생활과 윤리</label>
+                            <label><input type="checkbox" name="edit-subject" value="파이썬"> 파이썬</label>
+                            <label><input type="checkbox" name="edit-subject" value="미술"> 미술</label>
+                            <label><input type="checkbox" name="edit-subject" value="음악"> 음악</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tutee-specific inputs (toggled in JS) -->
+                <div id="tutee-edit-fields" style="display:none;">
+                    <div class="input-group">
+                        <label>나이</label>
+                        <input type="number" id="edit-tutee-age">
+                    </div>
+                    <div class="input-group">
+                        <label>지역</label>
+                        <select id="edit-tutee-region" onchange="updateSubRegions('edit-tutee')">
+                            <option value="">시/도를 선택하세요</option>
+                        </select>
+                        <select id="edit-tutee-sub-region">
+                            <option value="">구/군을 선택하세요</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>학교 (중/고)</label>
+                        <input type="text" id="edit-tutee-school">
+                    </div>
+                </div>
+
+                <!-- Availability Timetable Grid -->
+                <div class="input-group" style="margin-top: 1.5rem; display: flex; flex-direction: column;">
+                    <label style="font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.25rem;">
+                        <i class="fas fa-calendar-alt" style="color: var(--primary);"></i> 과외 가능 시간대 설정
+                    </label>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0; margin-bottom: 1rem; line-height: 1.4;">
+                        월요일부터 일요일까지, 과외 가능한 시간대를 드래그하여 지정하세요. (30분 단위)
+                    </p>
+                    
+                    <!-- Preset buttons for quick selection -->
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        <button type="button" class="btn secondary" onclick="setAvailabilityPreset('weekday-evening')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin: 0; font-weight: 700;">평일 저녁 (18:00~24:00)</button>
+                        <button type="button" class="btn secondary" onclick="setAvailabilityPreset('weekend-all')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin: 0; font-weight: 700;">주말 종일 (09:00~24:00)</button>
+                        <button type="button" class="btn secondary" onclick="setAvailabilityPreset('all')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin: 0; font-weight: 700;">전체 선택</button>
+                        <button type="button" class="btn secondary" onclick="clearAvailabilityGrid()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin: 0; background: #fee2e2; color: #ef4444; border: 1px solid #fecdd3; font-weight: 700;">전체 초기화</button>
+                    </div>
+
+                    <!-- Scrollable Container for the Timetable -->
+                    <div class="availability-timetable-container" style="max-height: 300px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 12px; background: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); position: relative; box-sizing: border-box; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;">
+                        <table id="profile-availability-table" style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem; font-family: inherit;">
+                            <!-- Will be rendered dynamically via JS -->
+                        </table>
+                    </div>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
+
+                <!-- Password editing and security checks -->
+                <div class="input-group">
+                    <label>새 비밀번호 (변경할 경우에만 입력)</label>
+                    <input type="password" id="edit-profile-new-password" placeholder="변경하려면 입력하세요">
+                </div>
+                <div class="input-group">
+                    <label>새 비밀번호 확인</label>
+                    <input type="password" id="edit-profile-new-password-confirm" placeholder="변경할 새 비밀번호를 한번 더 입력하세요">
+                </div>
+                
+                <div class="input-group" style="background: #fff1f2; padding: 1rem; border-radius: 12px; border: 1px solid #fecdd3;">
+                    <label style="color: #be123c;"><i class="fas fa-lock" style="margin-right: 6px;"></i>현재 비밀번호 확인 (필수)</label>
+                    <input type="password" id="edit-profile-current-password" required placeholder="수정하려면 현재 비밀번호를 입력해주세요">
+                </div>
+
+                <button type="submit" class="submit-btn" style="background: var(--primary);">수정 완료</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chatModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; padding: 0; border-radius: 16px; display: flex; flex-direction: column; height: 80vh; overflow: hidden;">
+            <div class="chat-header" style="background: var(--primary); color: white; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-radius: 16px 16px 0 0;">
+                <h3 id="chat-room-title" style="margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;"><i class="fas fa-comments"></i> 1:1 대화방</h3>
+                <span class="close" onclick="closeChatModal()" style="color: white; cursor: pointer; font-size: 1.5rem; font-weight: bold; line-height: 1;">&times;</span>
+            </div>
+            
+            <div id="chat-messages-container" style="flex: 1; padding: 1.5rem; overflow-y: auto; background: #f1f5f9; display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Dynamically populated messages -->
+            </div>
+            
+            <form onsubmit="sendChatMessage(event)" style="display: flex; padding: 1rem; background: var(--white); border-top: 1px solid #e2e8f0; gap: 0.5rem; box-sizing: border-box; align-items: center; margin: 0;">
+                <button type="button" onclick="triggerChatFileSelect()" class="btn secondary" style="padding: 0.75rem; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; margin: 0; background: #f1f5f9; color: var(--text-muted); border: 1px solid #e2e8f0;">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="file" id="chat-file-input" style="display:none;" onchange="handleChatFileChange()">
+                <input type="text" id="chat-input-message" placeholder="메시지를 입력하세요..." autocomplete="off" style="flex: 1; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 20px; box-sizing: border-box;">
+                <button type="submit" class="btn primary" style="padding: 0.75rem 1.25rem; border-radius: 20px; margin: 0; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                    <i class="fas fa-paper-plane"></i> 전송
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Tutoring Modal -->
+    <div id="deleteTutoringModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; padding: 2rem; border-radius: 16px; text-align: center;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 3.5rem; color: #ef4444; margin-bottom: 1.5rem;"></i>
+            <h3 style="color: #be123c; margin-top: 0; margin-bottom: 1rem;">수업/신청 삭제</h3>
+            <p style="color: var(--text-main); line-height: 1.6; margin-bottom: 1.5rem; font-size: 0.95rem; text-align: left;">
+                해당 수업 또는 매칭 요청을 삭제하시겠습니까?<br>
+                삭제 시 관련된 모든 대화 내역 및 매칭 기록이 <strong>영구적으로 제거되며 복구할 수 없습니다.</strong>
+            </p>
+            <div style="margin-bottom: 1.5rem; text-align: left;">
+                <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; font-weight: 600; color: #9f1239; margin-bottom: 0; font-size: 0.9rem;">
+                    <input type="checkbox" id="delete-confirm-checkbox" style="width: 16px; height: 16px; margin: 0; padding: 0;">
+                    위 내용을 명확히 확인했으며, 동의합니다.
+                </label>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn secondary" onclick="closeModal('deleteTutoringModal')" style="flex: 1; margin: 0;">취소</button>
+                <button class="btn primary" onclick="executeDeleteTutoring()" style="flex: 1; margin: 0; background: #ef4444;">삭제하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutor Reverse Proposal Modal -->
+    <div id="tutorProposalModal" class="modal">
+        <div class="modal-content" style="max-width: 500px; padding: 2rem; border-radius: 16px;">
+            <span class="close" onclick="closeModal('tutorProposalModal')">&times;</span>
+            <h2 style="color: var(--primary); margin-top: 0; display:flex; align-items:center; gap:8px;"><i class="fas fa-paper-plane"></i> 과외 역제안하기</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">학생의 공개 과외 요청에 나만의 조건으로 역제안을 보냅니다.</p>
+            
+            <form onsubmit="submitTutorProposal(event)">
+                <input type="hidden" id="proposal-app-id">
+                <div class="input-group">
+                    <label style="font-weight: 700;">희망 시급 (원)</label>
+                    <input type="number" id="proposal-fee" required step="1000" min="10000" placeholder="예: 25000">
+                </div>
+                <div class="input-group" id="proposal-subject-group">
+                    <label style="font-weight: 700;">제안할 과목 선택</label>
+                    <select id="proposal-subject" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.75rem; box-sizing: border-box; font-size: 0.95rem; background: #f8fafc; font-weight: 600; cursor: pointer;"></select>
+                </div>
+                <div class="input-group">
+                    <label style="font-weight: 700;">선생님 소개 및 한 줄 다짐</label>
+                    <textarea id="proposal-bio" required rows="4" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.75rem; box-sizing: border-box; font-family: inherit; font-size: 0.95rem;" placeholder="학생에게 어필할 한 줄 다짐이나 전공 강점을 정성껏 적어주세요."></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                    <button type="button" class="btn secondary" onclick="closeModal('tutorProposalModal')" style="flex: 1; margin: 0;">취소</button>
+                    <button type="submit" class="btn primary" style="flex: 1; margin: 0; background: var(--primary);">제안서 제출하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Student View Proposals Modal -->
+    <div id="studentViewProposalsModal" class="modal">
+        <div class="modal-content" style="max-width: 650px; padding: 2rem; border-radius: 16px; display:flex; flex-direction:column; max-height:85vh;">
+            <span class="close" onclick="closeModal('studentViewProposalsModal')">&times;</span>
+            <h2 style="color: var(--secondary); margin-top: 0; display:flex; align-items:center; gap:8px;"><i class="fas fa-users-cog"></i> 받은 과외 제안 목록</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">선생님들이 보내주신 과외 제안입니다. 프로필과 각오를 꼼꼼히 비교해보세요!</p>
+            
+            <input type="hidden" id="student-view-proposals-app-id">
+            <div id="student-proposals-list" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:1rem; margin-top: 0.5rem; padding-right: 4px;">
+                <!-- Populated dynamically via JS -->
+            </div>
+            
+            <button class="btn secondary" onclick="closeModal('studentViewProposalsModal')" style="width: 100%; margin-top: 1.5rem; margin-bottom:0;">닫기</button>
+        </div>
+    </div>
+
+    <!-- View Availability Modal -->
+    <div id="viewAvailabilityModal" class="modal">
+        <div class="modal-content" style="max-width: 600px; padding: 2rem; border-radius: 16px; display:flex; flex-direction:column; max-height:85vh;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem; margin-bottom: 1.25rem;">
+                <h3 id="availability-modal-title" style="margin:0; font-size: 1.3rem; display:flex; align-items:center; gap:8px; color: var(--text-main);"><i class="fas fa-clock" style="color:var(--primary);"></i> 스케줄 확인</h3>
+                <span class="close" onclick="closeModal('viewAvailabilityModal')" style="cursor:pointer; font-size:1.5rem; font-weight:700;">&times;</span>
+            </div>
+            
+            <div style="margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-muted); line-height: 1.4;">
+                <div style="display: flex; gap: 1rem; align-items: center; justify-content: center; background: #f8fafc; padding: 0.6rem; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <div style="display:flex; align-items:center; gap:4px; font-weight:700;"><span style="display:inline-block; width:12px; height:12px; background:#dbeafe; border: 1px solid #93c5fd; border-radius:3px;"></span> 상대방 가능 시간</div>
+                    <div id="availability-legend-overlap" style="display:flex; align-items:center; gap:4px; font-weight:700;"><span style="display:inline-block; width:12px; height:12px; background:#10b981; border: 1px solid #6ee7b7; border-radius:3px;"></span> 나랑 겹치는 매칭 시간 (성사 가능!)</div>
+                </div>
+                <p id="availability-modal-desc" style="margin: 0; font-weight: 700; text-align: center; color: var(--text-main); font-size: 0.95rem;"></p>
+            </div>
+            
+            <div class="availability-timetable-container" style="flex:1; max-height: 380px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 12px; background: #f8fafc; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); position: relative; box-sizing: border-box; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;">
+                <table id="view-availability-table" style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem; font-family: inherit;">
+                    <!-- Rendered dynamically -->
+                </table>
+            </div>
+            
+            <button class="btn primary" onclick="closeModal('viewAvailabilityModal')" style="width: 100%; margin-top: 1.5rem; margin-bottom:0; background: var(--primary);">확인 완료</button>
+        </div>
+    </div>
+
+    <!-- Notification Drawer Panel -->
+    <div id="notification-panel" class="notification-panel" style="position: fixed; top: 0; right: -360px; width: 340px; height: 100vh; background: var(--white); box-shadow: -4px 0 20px rgba(0,0,0,0.15); z-index: 2000; transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; box-sizing: border-box;">
+        <div class="notification-header" style="background: var(--primary); color: white; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-radius: 0;">
+            <h3 style="margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;"><i class="fas fa-bell"></i> 알림 센터</h3>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span onclick="markAllNotificationsRead()" style="font-size: 0.8rem; color: #dbeafe; cursor: pointer; text-decoration: underline;">모두 읽음</span>
+                <span class="close" onclick="closeNotificationPanel()" style="color: white; cursor: pointer; font-size: 1.5rem; font-weight: bold; line-height: 1; margin: 0; padding: 0;">&times;</span>
+            </div>
+        </div>
+        <div id="notification-list" style="flex: 1; padding: 1rem; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Dynamically populated notifications -->
+        </div>
+    </div>
+    <!-- Drawer Overlay Backdrop -->
+    <div id="notification-overlay" onclick="closeNotificationPanel()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 1999; display: none;"></div>
+
+    <!-- Firebase SDK (v8) CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
